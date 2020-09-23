@@ -121,7 +121,7 @@ Copy the decoded content and paste it into the editor, such as Visual Studio Cod
 
 Copy the decoded content to vscode and Save as **json** format
 
-**Notice**：the `DB_SERVICE_NAME` and `IOTHUB_SERVICE_NAME` need to be same name in **decode secret instance name**。, Not the instance name in portal-service
+**Notice**：the `DB_SERVICE_NAME` and `IOTHUB_SERVICE_NAME` need to be same name in **decode content instance name**。, Not the instance name in portal-service
 
 ![copyDataVS](https://tva1.sinaimg.cn/large/007S8ZIlgy1giz80nrjndj317k0rk10h.jpg)
 
