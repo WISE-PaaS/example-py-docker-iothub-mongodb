@@ -1,82 +1,65 @@
-# Example-Python-Docker-Iothub-MongoDB
+(#example-python-docker-iothub-mongodb)
 
+- [1. Introduction](#1-introduction)
+- [2. Before You Start](#2-before-you-start)
+- [3. Downloading the Project](#3-downloading-the-project)
+- [4. Deploy the app to WISE-PaaS](#4-deploy-the-app-to-wise-paas)
+- [5. Application Introduce](#5-application-introduce)
+  - [5-1. index.py](#5-1-indexpy)
+  - [5-2. publisher.py](#5-2-publisherpy)
+- [6. Kubernetes Config](#6-kubernetes-config)
+  - [6-1. deployment.yaml](#6-1-deploymentyaml)
+  - [6-2. ingress.yaml](#6-2-ingressyaml)
+  - [6-3. service.yaml](#6-3-serviceyaml)
+- [7. Docker](#7-docker)
+  - [7-1. dockerfile](#7-1-dockerfile)
+- [8. Deployment Application Steps](#8-deployment-application-steps)
+  - [8-1. build Docker image](#8-1-build-docker-image)
+  - [8-2. push it to Docker Hub](#8-2-push-it-to-docker-hub)
+  - [8-3. create kubernetes object ( All object are in the k8s folder)](#8-3-create-kubernetes-object--all-object-are-in-the-k8s-folder)
+  - [8-4. Check（Pod status is running for success）](#8-4-checkpod-status-is-running-for-success)
+  - [8-5. Send message to wise-paas by MQTT](#8-5-send-message-to-wise-paas-by-mqtt)
+  - [8-6. Check that mongodb has received data](#8-6-check-that-mongodb-has-received-data)
+
+## 1. Introduction
 
 This is WIES-PaaS Iothub example-code include the sso and rabbitmq service insert data to MongoDB，and we use the Docker package this file。
 
-[IotHub](https://advantech.wistia.com/medias/up3q2vxvn3)
+## 2. Before You Start
 
-[SSO](https://advantech.wistia.com/medias/vay5uug5q6)
+1. Create a [Docker](https://www.docker.com/get-started) Account
+2. Development Environment
+   - Install [Docker](https://docs.docker.com/install/)
+   - Install [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
+   - Install [MongoDB-Server](https://www.mongodb.com/download-center/community)
+   - Install [Robo-3T](https://robomongo.org/download)
 
-## Quick Start
-
-#### Environment prepare
-
-#### python3(need include pip3)
-
-[python3](https://www.python.org/downloads/)
-
-#### cf-cli
-
-[cf-cli](https://docs.cloudfoundry.org/cf-cli/install-go-cli.html)
-
-Use to push application to WISE-PaaS，if you want to know more you can see this video
-
-
-#### docker
-
-[docker](https://www.docker.com/)
-
-Use to packaged our application
-
-MongoDB && Robo 3T
-
-[MongoDB-Server](https://www.mongodb.com/download-center/community)
-
-[Robo-3T](https://robomongo.org/download)
-
-python3 package(those library can run this application in local):
-
-    #mqtt
-    pip3 install paho-mqtt
-    #python-backend
-    pip3 install Flask
-    #python-mongodb
-    pip3 install flask_pymongo
-    
-
-#### Download this file
+## 3. Downloading the Project
 
     git clone https://github.com/WISE-PaaS/example-py-docker-iothub-mongodb.git
 
-#### Login to WISE-PaaS 
-    
-![Imgur](https://i.imgur.com/JNJmxFy.png)
+## 4. Deploy the app to WISE-PaaS
 
-    #cf login -skip-ssl-validation -a {api.domain_name}  -u "account" -p "password"
-    cf login –skip-ssl-validation -a api.wise-paas.io -u xxxxx@advtech.com.tw -p xxxxxx
-    
-    #check the cf status
-    cf target
+WISE-PaaS has 2 types of data centers
 
-## Application Introduce
+**SA DataCenter**：[https://portal-mp-ensaas.sa.wise-paas.com/](https://portal-mp-ensaas.sa.wise-paas.com/)
 
-#### Dockerfile
+- **Cluster**：eks004
+  - **Workspace**：adv-training
+    - **Namespace**：level2
 
-We first download the python:3.6 and copy this application to  `/app`，and install library define in `requirements.txt` 
-```
-FROM python:3.6-slim  
-WORKDIR /app  
-ADD . /app  
-RUN pip3 install -r requirements.txt
+**HZ DataCenter**：[https://portal-mp-ensaas.hz.wise-paas.com.cn/](https://portal-mp-ensaas.hz.wise-paas.com.cn/)
 
-#Use in local
-# EXPOSE 3000
-# CMD ["python", "hello.py"]  
-```
+- **Cluster**：eks006
+  - **Workspace**：advtraining
+    - **Namespace**：level2
 
-#### index.py
+## 5. Application Introduce
+
+### 5-1. index.py
 
 Simply backend appliaction。
+
 ```py
 app = Flask(__name__)
 
@@ -88,39 +71,62 @@ port = int(os.getenv("PORT", 3000))
 def root():
 
     if(port == 3000):
-        return 'hello world! i am in the local'
+        return 'py-docker-iothub-mongodb successful'
     elif(port == int(os.getenv("PORT"))):
         return render_template('index.html')
 ```
 
-This is the mqtt and mongodb connect config code，`vcap_services` can get the application environment in WISE-PaaS，you need to attention，and the service_name it need to be same name in WISE-PaaS rabbitmq(iothub) service name。
+This is the MQTT and MongoDB connect config code，`ENSAAS_SERVICESS` can get the application environment in WISE-PaaS。
 
 ```py
-vcap_services = os.getenv('VCAP_SERVICES')
-vcap_services_js = json.loads(vcap_services)
+ENSAAS_SERVICES = os.getenv('ENSAAS_SERVICES')
+ENSAAS_SERVICES_js = json.loads(ENSAAS_SERVICES)
 service_name = 'p-rabbitmq'
-DB_SERVICE_NAME = 'mongodb-innoworks'
+DB_SERVICE_NAME = 'mongodb'
 
 #mqtt
-broker = vcap_services_js[service_name][0]['credentials']['protocols']['mqtt']['host']
-username = vcap_services_js[service_name][0]['credentials']['protocols']['mqtt']['username'].strip()
-password = vcap_services_js[service_name][0]['credentials']['protocols']['mqtt']['password'].strip()
-mqtt_port = vcap_services_js[service_name][0]['credentials']['protocols']['mqtt']['port']
+broker = ENSAAS_SERVICES_js[service_name][0]['credentials']['protocols']['mqtt']['host']
+username = ENSAAS_SERVICES_js[service_name][0]['credentials']['protocols']['mqtt']['username'].strip()
+password = ENSAAS_SERVICES_js[service_name][0]['credentials']['protocols']['mqtt']['password'].strip()
+mqtt_port = ENSAAS_SERVICES_js[service_name][0]['credentials']['protocols']['mqtt']['port']
 ```
 
 The `temp` is collection name and you can name by yourself
+
 ```py
 #mongodb
-uri = vcap_services_js[DB_SERVICE_NAME][0]['credentials']['uri']
+uri = ENSAAS_SERVICES_js[DB_SERVICE_NAME][0]['credentials']['uri']
 app.config['MONGO_URI'] = uri
 mongo = PyMongo(app)
 collection = mongo.db.temp
 
 ```
 
-![Imgur](https://i.imgur.com/6777rmg.png)
+Retrieve the secret, which iothub the secret contains
+
+    # List all secrets in the namespace
+    $ kubectl get secret --namespace=level2
+    # Output the secret content
+    $ kubectl get secret {secret_name} --namespace=level2 -o yaml
+
+![-oyaml](https://tva1.sinaimg.cn/large/007S8ZIlgy1giz6sk4hb3j30ta0c3n5j.jpg)
+
+Copy the decoded content and paste it into the editor, such as Visual Studio Code, and let the plugin prettify it. You can now inspect the structure and start to construct your code.
+
+    # Decoding the secret
+    $ kubectl get secret {secret_name} --namespace=level2 -o jsonpath="{.data.ENSAAS_SERVICES}" | base64 --decode; echo
+
+![-ojsonpath](https://tva1.sinaimg.cn/large/007S8ZIlgy1giz88jndhjj30up04gtd9.jpg)
+
+Copy the decoded content to vscode and Save as **json** format
+**Notice**：the `DB_SERVICE_NAME` and `IOTHUB_SERVICE_NAME` need to be same name in secret instance name。**PS（ Not the instance name in portal-service ）**
+
+![copyDataVS](https://tva1.sinaimg.cn/large/007S8ZIlgy1giz80nrjndj317k0rk10h.jpg)
+
+![copyDataVS](https://tva1.sinaimg.cn/large/007S8ZIlgy1gizhkhix9tj313h0u0ws0.jpg)
 
 This code can connect to IohHub，if it connect successful， `on_connect` will print successful result and subscribe topic `/hello`，you can define topic by yourself，and when we receive message `on_message` will save data to the mongodb and get the time immediate。
+
 ```py
 
 #mqtt
@@ -153,99 +159,123 @@ client.connect(broker, mqtt_port, 60)
 client.loop_start()
 ```
 
+### 5-2. publisher.py
 
-#### mainfest config
+This file can help us publish message to topic。
 
-Open **manifest.yml** and editor the **application name**，because the appication can't duplicate in same domain name。
+Edit the **publisher.py** `broker、port、username、password` you can find in **ENSAAS_SERVICES**
 
-Check the service instance name same as WISE-PaaS
+- bokrer:"ENSAAS_SERVICES => p-rabbitmq => externalHosts"
+- port :"ENSAAS_SERVICES => p-rabbitmq => mqtt => port"
+- username :"ENSAAS_SERVICES => p-rabbitmq => mqtt => username"
+- password: "ENSAAS_SERVICES => p-rabbitmq => mqtt => password"
 
-![Imgur](https://i.imgur.com/4eynKmE.png)
+![publisher](https://tva1.sinaimg.cn/large/007S8ZIlgy1gish55bh5nj318v0u0qg3.jpg)
 
-![Imgur](https://i.imgur.com/VVMcYO8.png)
+## 6. Kubernetes Config
 
-## SSO(Single Sign On)
+### 6-1. deployment.yaml
 
-This is the [sso](https://advantech.wistia.com/medias/vay5uug5q6) applicaition，open **`templates/index.html`** and editor the `ssoUrl` to your application name，
+Each user needs to adjust the variables for certification, as follows：
 
-If you don't want it，you can ignore it。
-    
-    #change this **`python-demo-try`** to your **application name**
-    var ssoUrl = myUrl.replace('python-demo-try', 'portal-sso');
+1. metadata >> name：py-docker-iothub-**{user_name}**
+2. student：**{user_name}**
+3. image：**{docker_account}** / py-docker-iothub：latest
+4. containerPort：listen 3000
+5. env >> valueFrom >> secretRef >> name：need same name in Portal-service **secret name**
 
-## Build Dokcer image
+![deployment](https://tva1.sinaimg.cn/large/007S8ZIlgy1gizi3huzmwj30n00s6dlq.jpg)
 
-Build image，and image you can name by yourself。
+**Notice：In Portal-Services secret name**
+![createSecret](https://tva1.sinaimg.cn/large/007S8ZIlly1gishp9o8q5j30qo09ignf.jpg)
 
-    docker build -t {image} .
-    docker build -t example-python-docker .
+### 6-2. ingress.yaml
 
+Each user needs to adjust the variables for certification, as follows：
 
-Tag image to a docker hub  
-[Docker Hub](https://hub.docker.com/)
+1. metadata >> name：py-docker-iothub-**{user_name}**
+2. host：py-docker-iothub-**{user_name}** . **{namespace_name}** . **{cluster_name}**.en.internal
+3. serviceName：need to be same name in Service.yaml **{metadata name}**
+4. servicePort：same **port** in Service.yaml
+   ![ingress](https://tva1.sinaimg.cn/large/007S8ZIlgy1gizi0dm8ubj30n70dbmzt.jpg)
 
-Create a repository
+### 6-3. service.yaml
 
-![Imgur](https://i.imgur.com/SxiLcOH.png)
+Each user needs to adjust the variables for certification, as follows：
 
-    #docker login to the docker hub
-    docker login
+1. metadata >> name：server-**{user_name}**
+2. student：**{user_name}**
+3. port：same **{port}** in ingress.yaml
+4. targetPort：same **{port}** in deployment.yaml **{containerPort}**
+   ![service](https://tva1.sinaimg.cn/large/007S8ZIlgy1gizhyahn75j30l10af0uj.jpg)
 
-    #docker tag {image name} {your account/dockerhub-resp name}
-    docker tag example-py-docker WISE-PaaS/example-py-docker
+## 7. Docker
 
-Push it to Docker Hub
-    
-    #docker push {your account/dockerhub-repo name}
-    docker push WISE-PaaS/example-py-docker
+### 7-1. dockerfile
 
-Push application and get environment
+We first download the python:3.6 and copy this application to `/app`，and install library define in `requirements.txt`
 
+```
+FROM python:3.6-slim
+WORKDIR /app
+ADD . /app
+RUN pip3 install -r requirements.txt
+EXPOSE 3000
+CMD ["python", "-u", "index.py"]
+```
 
-    #cf push --docker-image{WISE-PaaS/dockerhub-repo name}
-    cf push --docker-image WISE-PaaS/example-py-docker
-    
-    #get the application environment
-    cf env python-demo-try > env.json 
+## 8. Deployment Application Steps
 
+### 8-1. build Docker image
 
+Adjust to your docker account
 
-#### publisher.py
+    $ docker build -t {docker_account / py-docker-iothub-mongodb：latest} .
 
-This file can help us publishW message to topic。 
+### 8-2. push it to Docker Hub
 
-Edit the **publisher.py** `broker、port、username、password` you can find in env.json
+    $ docker push {docker_account / py-docker-iothub-mongodb：latest}
 
-* bokrer:"VCAP_SERVICES => p-rabbitmq => externalHosts"
-* port :"VCAP_SERVICES => p-rabbitmq => mqtt => port"
-* username :"VCAP_SERVICES => p-rabbitmq => mqtt => username"
-* password: "VCAP_SERVICES => p-rabbitmq => mqtt => password"
+### 8-3. create kubernetes object ( All object are in the k8s folder)
 
-open two terminal
-    
-    Listen the console
-    
-    #cf logs {application name}
-    cf logs python-demo-try
+    $ kubectl apply -f k8s/
 
-    send message to application in WISE-PaaS
+![createSecret](https://tva1.sinaimg.cn/large/007S8ZIlgy1gizi8lr9flj31c205gwi7.jpg)
 
+### 8-4. Check（Pod status is running for success）
+
+    # grep can quickly find key words
+    $ kubectl get all --namespace=level2 | grep mongodb-sk-chen
+
+![createSecret](https://tva1.sinaimg.cn/large/007S8ZIlgy1giziaymkq6j31fy06cjwy.jpg)
+
+### 8-5. Send message to wise-paas by MQTT
+
+**Open two terminal first.**
+
+    # 1. View the log of the container
+    kubectl logs -f pod/{pod_name} --namespace=level2
+
+![createSecret](https://tva1.sinaimg.cn/large/007S8ZIlgy1gizid2iyb7j31ca0bygtx.jpg)
+
+    # 2. Send message to application in WISE-PaaS
     python publisher.py
 
-![Imgur](https://i.imgur.com/9HEJ9OF.png)
+![createSecret](https://tva1.sinaimg.cn/large/007S8ZIlgy1gizigtkkk8j31c2030mz0.jpg)
 
-## Result in MongoDB 
+### 8-6. Check that mongodb has received data
 
-#### You can watch the row data use Robo 3T，and the config can find in WISE-PaaS Application Environment
-(WISE-PaaS/EnSaaS => application List => click application => environment)
+You can use Robo 3T to check our your insert data，so you need to go to Portal-service or decode data to get your config
 
-![Imgur](https://i.imgur.com/hasorjh.png)
+![copyDataVS](https://tva1.sinaimg.cn/large/007S8ZIlgy1gizinslnm2j31is0u0k11.jpg)
 
-Robo 3T create server(File => connect => Create)
+Robo 3T create server (File => connect => Create)
 
-- address => VCAP_SERVICES => mongodb-innoworks => 0 => external_host
-- Database => VCAP_SERVICES => mongodb-innoworks => 0 => credentials => database
-- Username => VCAP_SERVICES => mongodb-innoworks => 0 => credentials => username
-- Password => VCAP_SERVICES => mongodb-innoworks => 0 => credentials => password
+- address => ENSAAS_SERVICES => mongodb-innoworks => 0 => external_host
+- Database => ENSAAS_SERVICES => mongodb-innoworks => 0 => credentials => database
+- Username => ENSAAS_SERVICES => mongodb-innoworks => 0 => credentials => username
+- Password => ENSAAS_SERVICES => mongodb-innoworks => 0 => credentials => password
 
-![Imgur](https://i.imgur.com/50RNl8y.png)
+![Imgur](https://tva1.sinaimg.cn/large/007S8ZIlgy1giziuclbpxj30ib0addgq.jpg)
+
+![robo3t](https://tva1.sinaimg.cn/large/007S8ZIlgy1giziup366ij30i70af3zm.jpg)

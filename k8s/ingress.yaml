@@ -1,0 +1,19 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: py-docker-iothub-mongodb-sk-chen
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    # nginx.ingress.kubernetes.io/rewrite-target: /$1
+spec:
+  rules:
+    # named domain name
+    - host: py-docker-iothub-mongodb-sk-chen.level2.eks004.en.internal
+      http:
+        paths:
+          - path: /
+            backend:
+              # Send packets based on service name
+              serviceName: py-docker-iothub-mongodb-sk-chen
+              # Unify a port to Service
+              servicePort: 3344

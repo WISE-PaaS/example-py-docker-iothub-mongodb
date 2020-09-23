@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: py-docker-iothub-mongodb-sk-chen
+spec:
+  type: ClusterIP
+  # Select the pod with "iothub and sk-chen"
+  selector:
+    component: mongodb
+    student: sk-chen
+  # Service actual external port
+  ports:
+    - port: 3344
+      # Pod actual external port
+      targetPort: 3000

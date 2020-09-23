@@ -4,7 +4,6 @@ import paho.mqtt.client as mqtt
 import os
 
 
-
 # mongodb need
 from flask_pymongo import PyMongo
 from flask import jsonify, request, abort
@@ -20,25 +19,25 @@ port = int(os.getenv("PORT", 3000))
 def root():
 
     if(port == 3000):
-        return 'hello world! i am in the local'
+        return 'example-py-docker-iothub-mongodb successful'
     elif(port == int(os.getenv("PORT"))):
         return render_template('index.html')
 
 
-vcap_services = os.getenv('VCAP_SERVICES')
-vcap_services_js = json.loads(vcap_services)
+ENSAAS_SERVICES = os.getenv('ENSAAS_SERVICES')
+ENSAAS_SERVICES_js = json.loads(ENSAAS_SERVICES)
 service_name = 'p-rabbitmq'
-DB_SERVICE_NAME = 'mongodb-innoworks'
+DB_SERVICE_NAME = 'mongodb'
 
 #mqtt
-broker = vcap_services_js[service_name][0]['credentials']['protocols']['mqtt']['host']
-username = vcap_services_js[service_name][0]['credentials']['protocols']['mqtt']['username'].strip()
-password = vcap_services_js[service_name][0]['credentials']['protocols']['mqtt']['password'].strip()
-mqtt_port = vcap_services_js[service_name][0]['credentials']['protocols']['mqtt']['port']
+broker = ENSAAS_SERVICES_js[service_name][0]['credentials']['protocols']['mqtt']['host']
+username = ENSAAS_SERVICES_js[service_name][0]['credentials']['protocols']['mqtt']['username'].strip()
+password = ENSAAS_SERVICES_js[service_name][0]['credentials']['protocols']['mqtt']['password'].strip()
+mqtt_port = ENSAAS_SERVICES_js[service_name][0]['credentials']['protocols']['mqtt']['port']
 
 
 # mongodb
-uri = vcap_services_js[DB_SERVICE_NAME][0]['credentials']['uri']
+uri = ENSAAS_SERVICES_js[DB_SERVICE_NAME][0]['credentials']['uri']
 app.config['MONGO_URI'] = uri
 mongo = PyMongo(app)
 collection = mongo.db.temp

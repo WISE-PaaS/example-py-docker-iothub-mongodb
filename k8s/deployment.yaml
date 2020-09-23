@@ -1,0 +1,45 @@
+# apiVersion, kind, metadata 3 fields are required
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  # deployment name
+  name: py-docker-iothub-mongodb-sk-chen
+spec:
+  # Specify how many pod replicas to create (default = 1)
+  replicas: 1
+  revisionHistoryLimit: 0
+  # Used to specify the pod label settings to be used for monitoring and management
+  # Must match the following pod label (.spec.template.metadata.labels)
+  selector:
+    matchLabels:
+      component: mongodb
+      student: sk-chen
+  # actually the definition of pod
+  template:
+    metadata: # pod metadata
+      labels: # Label information set to pod
+        component: mongodb
+        student: sk-chen
+    spec:
+      containers:
+        - name: mongodb
+          image: tecd010203/py-docker-iothub-mongodb:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+          # Resource allocation
+          resources:
+            limits:
+              cpu: 20m
+              memory: 64Mi
+              ephemeral-storage: 64Mi
+            requests:
+              cpu: 20m
+              memory: 64Mi
+          # Define environment variables
+          env:
+            - name: ENSAAS_SERVICES
+              valueFrom:
+                secretKeyRef:
+                  name: level2-secret
+                  key: ENSAAS_SERVICES
