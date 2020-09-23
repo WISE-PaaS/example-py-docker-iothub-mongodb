@@ -1,4 +1,4 @@
-(#example-python-docker-iothub-mongodb)
+# Example-Python-Docker-Iothub-MongoDB
 
 - [1. Introduction](#1-introduction)
 - [2. Before You Start](#2-before-you-start)
