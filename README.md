@@ -106,6 +106,7 @@ Retrieve the secret, which iothub the secret contains
 
     # List all secrets in the namespace
     $ kubectl get secret --namespace=level2
+    
     # Output the secret content
     $ kubectl get secret {secret_name} --namespace=level2 -o yaml
 
