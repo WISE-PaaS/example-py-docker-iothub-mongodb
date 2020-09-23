@@ -23,7 +23,7 @@
 
 ## 1. Introduction
 
-This is WIES-PaaS Iothub example-code include the sso and rabbitmq service insert data to MongoDB，and we use the Docker package this file。
+This sample code shows how to deploy an application to the EnSaaS 4.0 environment and connect to the the database (MongoDB) and message broker (RabbitMQ) services provided by the platform.
 
 ## 2. Before You Start
 
