@@ -42,13 +42,13 @@ This sample code shows how to deploy an application to the EnSaaS 4.0 environmen
 
 WISE-PaaS has 2 types of data centers
 
-**SA DataCenter**：[https://portal-mp-ensaas.sa.wise-paas.com/](https://portal-mp-ensaas.sa.wise-paas.com/)
+**SA DataCenter**：[https://portal-mp-ensaas.sa.wise-paas.com](https://portal-mp-ensaas.sa.wise-paas.com/)
 
 - **Cluster**：eks004
   - **Workspace**：adv-training
     - **Namespace**：level2
 
-**HZ DataCenter**：[https://portal-mp-ensaas.hz.wise-paas.com.cn/](https://portal-mp-ensaas.hz.wise-paas.com.cn/)
+**HZ DataCenter**：[https://portal-mp-ensaas.hz.wise-paas.com.cn](https://portal-mp-ensaas.hz.wise-paas.com.cn/)
 
 - **Cluster**：eks006
   - **Workspace**：advtraining
