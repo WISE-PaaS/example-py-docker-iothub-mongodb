@@ -178,9 +178,9 @@ Edit the **publisher.py** `broker、port、username、password` you can find in 
 
 Each user needs to adjust the variables for certification, as follows：
 
-1. metadata >> name：py-docker-iothub-**{user_name}**
+1. metadata >> name：py-docker-iothub-mongodb-**{user_name}**
 2. student：**{user_name}**
-3. image：**{docker_account}** / py-docker-iothub：latest
+3. image：**{docker_account}** / py-docker-iothub-mongodb：latest
 4. containerPort：listen 3000
 5. env >> valueFrom >> secretRef >> name：need same name in Portal-service **secret name**
 
@@ -193,8 +193,8 @@ Each user needs to adjust the variables for certification, as follows：
 
 Each user needs to adjust the variables for certification, as follows：
 
-1. metadata >> name：py-docker-iothub-**{user_name}**
-2. host：py-docker-iothub-**{user_name}** . **{namespace_name}** . **{cluster_name}**.en.internal
+1. metadata >> name：py-docker-iothub-mongodb-**{user_name}**
+2. host：py-docker-iothub-mongodb-**{user_name}** . **{namespace_name}** . **{cluster_name}**.en.internal
 3. serviceName：need to be same name in Service.yaml **{metadata name}**
 4. servicePort：same **port** in Service.yaml
    ![ingress](https://tva1.sinaimg.cn/large/007S8ZIlgy1gizi0dm8ubj30n70dbmzt.jpg)
@@ -203,7 +203,7 @@ Each user needs to adjust the variables for certification, as follows：
 
 Each user needs to adjust the variables for certification, as follows：
 
-1. metadata >> name：server-**{user_name}**
+1. metadata >> name：py-docker-iothub-mongodb-**{user_name}**
 2. student：**{user_name}**
 3. port：same **{port}** in ingress.yaml
 4. targetPort：same **{port}** in deployment.yaml **{containerPort}**
@@ -265,7 +265,7 @@ Adjust to your docker account
 
 ### 8-6. Check that mongodb has received data
 
-You can use Robo 3T to check our your insert data，so you need to go to Portal-service or decode data to get your config
+You can use Robo-3T to check our your insert data，so you need to go to Portal-service or decode data to get your config
 
 ![copyDataVS](https://tva1.sinaimg.cn/large/007S8ZIlgy1gizinslnm2j31is0u0k11.jpg)
 
